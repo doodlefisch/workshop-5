@@ -1,7 +1,8 @@
 import bodyParser from "body-parser";
 import express from "express";
 import { BASE_NODE_PORT } from "../config";
-import { Value } from "../types";
+import {Value, NodeState} from "../types";
+import {delay} from "../utils";
 
 export async function node(
   nodeId: number, // the ID of the node
@@ -16,25 +17,45 @@ export async function node(
   node.use(express.json());
   node.use(bodyParser.json());
 
-  // TODO implement this
-  // this route allows retrieving the current status of the node
-  // node.get("/status", (req, res) => {});
+  let currentState: NodeState = {
+    killed: isFaulty,
+    x: isFaulty ? null : initialValue,
+    decided: isFaulty ? null : false,
+    k: isFaulty ? null : 0
+};
 
-  // TODO implement this
-  // this route allows the node to receive messages from other nodes
-  // node.post("/message", (req, res) => {});
+const incomingMessages: any[] = [];
+let proposals: Map<number, Value[]> = new Map();
+let votes: Map<number, Value[]> = new Map();
 
-  // TODO implement this
-  // this route is used to start the consensus algorithm
-  // node.get("/start", async (req, res) => {});
+// Route to get the status of the node
+node.get("/status", (req, res) => {
+    if (currentState.killed) {
+        res.status(500).send("faulty");
+    } else {
+        res.status(200).send("live");
+    }
+});
 
-  // TODO implement this
-  // this route is used to stop the consensus algorithm
-  // node.get("/stop", async (req, res) => {});
+// TODO implement this
+// this route allows the node to receive messages from other nodes
 
-  // TODO implement this
-  // get the current state of a node
-  // node.get("/getState", (req, res) => {});
+
+// TODO implement this
+// this route is used to start the consensus algorithm
+
+// this route is used to stop the consensus algorithm
+node.get("/stop", async (req, res) => {
+    currentState.killed = true;
+    res.status(200).send("killed");
+});
+
+// Route to get the current state of the node
+node.get("/getState", (req, res) => {
+    res.status(200).send(currentState);
+});
+
+
 
   // start the server
   const server = node.listen(BASE_NODE_PORT + nodeId, async () => {
